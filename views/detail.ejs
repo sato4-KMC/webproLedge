@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>詳細</title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <link rel="stylesheet" href="/stylesheets/colors.css" />
+    <style>
+      .detail-hero{
+        position:relative;
+        z-index:1;
+        /* フルブリード（親の左右余白を無視して画面いっぱい） */
+        width:100vw;
+        margin-left:calc(50% - 50vw);
+        margin-right:calc(50% - 50vw);
+        /* 色と形 */
+        background:var(--rose, #e03a53);
+        color:#fff;
+        border-bottom-left-radius:40px;
+        border-bottom-right-radius:40px;
+        overflow:hidden; /* 角丸を確実に反映 */
+        padding: max(16px, env(safe-area-inset-top)) 20px 48px;
+        min-height: 220px; /* 見本の高さ感 */
+      }
+      /* 置き換え：.detail-hero */
+      .detail-hero{
+        position: relative;
+        z-index: 1;
+        /* 画面幅いっぱいに（親の左右余白を無視） */
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+
+        background: var(--rose, #e03a53);
+        color: #fff;
+        border-bottom-left-radius: 40px;
+        border-bottom-right-radius: 40px;
+        overflow: hidden;                /* 角丸を確実に反映 */
+        padding: max(16px, env(safe-area-inset-top)) 20px 48px;
+        min-height: 220px;
+
+        /* 中央揃え */
+        display: flex;
+        flex-direction: column;
+        align-items: center;             /* 横方向センター */
+        text-align: center;              /* テキスト中央 */
+      }
+
+      /* 置き換え：.detail-hero .nav / .back */
+      .detail-hero .nav{
+        display:flex;
+        align-items:center;
+        justify-content:center;          /* タイトルを中央 */
+        position:relative;
+        width:100%;
+      }
+      .detail-hero .back{
+        position:absolute;               /* 戻るは左固定 */
+        left:16px;
+        color:#fff;
+        text-decoration:none;
+        font-size:22px;
+      }
+
+      /* 置き換え：タイトル・金額も確実に白＆中央 */
+      .detail-hero .title{font-size:14px; opacity:.95; margin-top:8px; color:#fff; text-align:center;}
+      .detail-hero .amount{font-size:56px; line-height:1.1; font-weight:800; margin:10px 0; color:#fff; text-align:center;}
+      .detail-hero .yen{font-size:.6em; margin-left:6px;}
+
+      /* 置き換え：チップと日付も中央に */
+      .chip{
+        display:inline-block;
+        padding:8px 18px;
+        border-radius:12px;
+        background:#fff;
+        color:var(--rose, #e03a53);
+        font-weight:700;
+        margin:10px auto 0;              /* 中央寄せ */
+      }
+      .chip.income{ background:rgba(255,255,255,.9); color:#333; }
+
+      .date{ color:#fff; opacity:.9; text-align:center; }
+      .section{padding:20px}
+      .fake-form{height:220px;border-radius:8px;background:#e5e5e5;display:flex;align-items:center;justify-content:center;color:#111;font-weight:800;margin:12px 0 18px}
+      .btn{width:100%;padding:16px;border-radius:12px;font-weight:800;cursor:pointer}
+      .btn-outline{border:2px solid var(--rose);background:#fff;color:var(--rose)}
+      .btn-danger{border:2px solid var(--rose);background:transparent;color:var(--rose)}
+      .errmsg{margin:12px 16px;color:#b91c1c;font-weight:700}
+
+      @media (min-width: 1000px){
+        .detail-hero{
+          width:auto;
+          margin-left:0;
+          margin-right:0;
+          border-bottom-left-radius:24px;
+          border-bottom-right-radius:24px;
+        }
+      }
+
+      /* Mobile: small padding around right pane so上部が隠れない問題を回避 */
+      @media (max-width: 999px){
+        .pane--right .right-scroll{ padding:16px; }
+      }
+
+      .seg{display:inline-flex; gap:8px; background:#f3f4f6; padding:6px; border-radius:10px}
+      .seg__btn{border:0; background:transparent; padding:8px 14px; border-radius:8px; font-weight:700; cursor:pointer}
+      .seg__btn--active{background:#111; color:#fff}
+    </style>
+  </head>
+  <body>
+    <% if (error) { %>
+      <div class="errmsg"><%= error %></div>
+    <% } %>
+
+    <div class="layout">
+      <!-- Left pane: header -->
+      <section class="pane pane--left">
+        <header class="detail-hero">
+          <div class="nav"><a class="back" href="/">‹</a><div style="flex:1;text-align:center;font-weight:700">詳細</div></div>
+          <% if (item) { 
+               const n = Number(item.amount||0);
+               const isExpense = n >= 0;
+          %>
+            <div class="title"><%= item.title || '' %></div>
+            <div class="amount"><%= Math.abs(n).toLocaleString('ja-JP') %><span class="yen">円</span></div>
+            <div style="margin-top:6px;">
+              <span class="chip <%= isExpense ? '' : 'income' %>"><%= isExpense ? '支出' : '収入' %></span>
+            </div>
+            <div class="date" style="margin-top:8px;">
+              <% 
+                let dispDate = '';
+                try {
+                  const d = new Date(item.createdAt);
+                  const parts = new Intl.DateTimeFormat('ja-JP', {
+                    timeZone: 'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit',
+                    hour:'2-digit', minute:'2-digit', weekday:'short', hour12:false
+                  }).formatToParts(d);
+                  const obj = Object.fromEntries(parts.map(p=>[p.type,p.value]));
+                  dispDate = `${obj.year}年${obj.month}月${obj.day}日 ${obj.weekday} ${obj.hour}:${obj.minute}`;
+                } catch(e) {}
+              %>
+              <%= dispDate %>
+            </div>
+          <% } %>
+        </header>
+        <%- include('components/section-open', { title: 'アイテムの編集 / 削除' }) %>
+
+          <% if (item) { 
+               // datetime-local の value 用に日本時間でYYYY-MM-DDTHH:MM
+               let dtValue = '';
+               try {
+                 const d = new Date(item.createdAt);
+                 // toLocaleString ではなく、手組みでゼロ埋め
+                 const pad = (n)=> String(n).padStart(2,'0');
+                 const y = d.getFullYear();
+                 const m = pad(d.getMonth()+1);
+                 const da = pad(d.getDate());
+                 const hh = pad(d.getHours());
+                 const mm = pad(d.getMinutes());
+                 dtValue = `${y}-${m}-${da}T${hh}:${mm}`;
+               } catch(e) {}
+          %>
+
+          <!-- 編集フォーム -->
+          <form action="/detail/edit?id=<%= item.id %>" method="post" class="card-form">
+            <div class="field">
+              <div class="field__label">題名</div>
+              <div class="field__input with-underline">
+                <input id="title" name="title" type="text" value="<%= item.title || '' %>" autocomplete="off" />
+                <span class="ok" aria-hidden="true">✓</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field__label">金額</div>
+              <div class="field__input with-underline prefixyen">
+                <span class="yen">¥</span>
+                <input id="amount" name="amount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="<%= Math.abs(Number(item.amount||0)) %>" />
+                <span class="ok" aria-hidden="true">✓</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field__label">種別</div>
+              <div class="field__input with-underline">
+                <% const __qType = (Number(item.amount||0) < 0) ? '支出' : '収入'; %>
+                <input type="hidden" name="qType" id="qTypeEdit" value="<%= __qType %>">
+                <div class="seg">
+                  <button type="button" id="btnExpenseEdit" class="seg__btn <%= (__qType==='支出')? 'seg__btn--active' : '' %>" data-mode="expense">支出</button>
+                  <button type="button" id="btnIncomeEdit" class="seg__btn <%= (__qType==='収入')? 'seg__btn--active' : '' %>" data-mode="income">収入</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field__label">日付</div>
+              <div class="field__input with-underline">
+                <input id="createdAt" name="createdAt" type="datetime-local" value="<%= dtValue %>" />
+                <span class="ok" aria-hidden="true">✓</span>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <button class="btn submit" type="submit">編集する</button>
+            </div>
+          </form>
+
+          <!-- 削除フォーム -->
+          <form action="/detail/delete?id=<%= item.id %>" method="post" onsubmit="return confirm('本当に削除しますか？');" style="margin-top:14px;">
+            <button class="btn btn-danger" type="submit">削除する</button>
+          </form>
+
+          <% } else { %>
+            <div class="fake-form">データがありません</div>
+          <% } %>
+
+          <%- include('components/section-close') %>
+      </section>
+
+      <!-- Right pane: forms -->
+      <section class="pane pane--right">
+        <main class="right-scroll">
+          <%- include('components/section-open', { title: '購入商品一覧' }) %>
+          <style>
+            .item-list{ list-style:none; padding:0; margin:0; }
+            .item-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 8px; border-bottom:1px solid #eee; }
+            .item-row .left{ display:flex; align-items:center; gap:10px; min-width:0; }
+            .item-row .dot{ width:10px; height:10px; border-radius:50%; background:#e03a53; flex:0 0 10px; }
+            .item-row .title{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            .item-row .amount{ font-variant-numeric: tabular-nums; font-weight:800; }
+            .icon-btn{ background:transparent; border:none; cursor:pointer; font-size:18px; line-height:1; padding:6px; }
+            .inline-form{ display:inline; margin:0; }
+          </style>
+          <ul class="item-list">
+            <% if (Array.isArray(items) && items.length) { %>
+              <% items.forEach(function(it){ %>
+                <li class="item-row">
+                  <div class="left">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="title"><%= it.title || 'ITEM' %></span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="amount"><%= (Number(it.amount)||0) >= 0 ? ('+¥'+Math.abs(Number(it.amount))) : ('-¥'+Math.abs(Number(it.amount))) %></span>
+                    <form class="inline-form" action="/detail/items/<%= it.id %>/delete?id=<%= item.id %>" method="post" onsubmit="return confirm('削除しますか？');">
+                      <button class="icon-btn" type="submit" aria-label="削除">🗑️</button>
+                    </form>
+                  </div>
+                </li>
+              <% }) %>
+            <% } else { %>
+              <li class="item-row"><div class="left"><span class="dot" aria-hidden="true"></span><span class="title">アイテムはまだありません</span></div></li>
+            <% } %>
+          </ul>
+          <%- include('components/section-close') %>
+          <%- include('components/section-open', { title: '購入アイテムの追加' }) %>
+
+          <% if (item) { 
+               let dtValue = '';
+               try {
+                 const d = new Date();
+                 const pad = (n)=> String(n).padStart(2,'0');
+                 const y = d.getFullYear();
+                 const m = pad(d.getMonth()+1);
+                 const da = pad(d.getDate());
+                 const hh = pad(d.getHours());
+                 const mm = pad(d.getMinutes());
+                 dtValue = `${y}-${m}-${da}T${hh}:${mm}`;
+               } catch(e) {}
+          %>
+
+          <!-- 購入アイテム追加フォーム（メモ用途：金額バリデなし） -->
+          <form action="/detail/items/add?id=<%= item.id %>" method="post" class="card-form">
+            <div class="field">
+              <div class="field__label">商品名</div>
+              <div class="field__input with-underline">
+                <input id="title" name="title" type="text" value="" autocomplete="off" placeholder="おにぎり、チーズ など" />
+                <span class="ok" aria-hidden="true">✓</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field__label">金額（数字のみ）</div>
+              <div class="field__input with-underline prefixyen">
+                <span class="yen">¥</span>
+                <input id="amount" name="amount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例: 200" />
+                <span class="ok" aria-hidden="true">✓</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field__label">種別</div>
+              <div class="field__input with-underline">
+                <input type="hidden" name="qType" id="qTypeAdd" value="支出">
+                <div class="seg">
+                  <button type="button" id="btnExpenseAdd" class="seg__btn seg__btn--active" data-mode="expense">支出</button>
+                  <button type="button" id="btnIncomeAdd" class="seg__btn" data-mode="income">収入</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="field__label">日付</div>
+              <div class="field__input with-underline">
+                <input id="createdAt" name="createdAt" type="datetime-local" value="<%= dtValue %>" />
+                <span class="ok" aria-hidden="true">✓</span>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <button class="btn submit" type="submit">追加する</button>
+            </div>
+          </form>
+
+          <% } else { %>
+            <div class="fake-form">データがありません</div>
+          <% } %>
+
+          <%- include('components/section-close') %>
+        </main>
+      </section>
+    </div>
+</main>
+  <script>
+    (function(){
+      function setupSeg(expenseBtnId, incomeBtnId, inputId){
+        const $exp = document.getElementById(expenseBtnId);
+        const $inc = document.getElementById(incomeBtnId);
+        const $in  = document.getElementById(inputId);
+        if(!$exp || !$inc || !$in) return;
+        function activate(mode){
+          if(mode==='expense'){
+            $exp.classList.add('seg__btn--active');
+            $inc.classList.remove('seg__btn--active');
+            $in.value = '支出';
+          }else{
+            $inc.classList.add('seg__btn--active');
+            $exp.classList.remove('seg__btn--active');
+            $in.value = '収入';
+          }
+        }
+        $exp.addEventListener('click', ()=> activate('expense'));
+        $inc.addEventListener('click', ()=> activate('income'));
+      }
+      // 左ペイン（編集フォーム）
+      setupSeg('btnExpenseEdit','btnIncomeEdit','qTypeEdit');
+      // 右ペイン（追加フォーム）
+      setupSeg('btnExpenseAdd','btnIncomeAdd','qTypeAdd');
+    })();
+  </script>
+  </body>
+</html>

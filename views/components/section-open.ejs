@@ -1,0 +1,41 @@
+<style>
+    /* ---- Reusable Section ---- */
+    .section {
+    background: --grey; /* colors.css の --grey を優先、無ければ薄グレー */
+    border-radius: 16px;
+    padding: 14px;
+    margin: 0 0 16px;
+    }
+
+    .section__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    }
+
+    .section__title {
+    font-size: 14px;
+    font-weight: 800;
+    color: --black;
+    }
+
+    .section__line {
+    height: 2px;
+    flex: 1;
+    background: #111;
+    opacity: .35;
+    border-radius: 2px;
+    }
+
+    .section__body {
+    /* 中身の余白は必要ならここで調整 */
+    }
+</style>
+
+<section class="section">
+  <div class="section__header">
+    <h2 class="section__title"><%= title %></h2>
+    <div class="section__line"></div>
+  </div>
+  <div class="section__body">

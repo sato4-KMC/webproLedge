@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model USERS {
+  id        Int      @id @default(autoincrement())
+  username  String   
+  email     String   @unique    
+  password  String
+}
+
+model POSTS {
+  id          Int      @id @default(autoincrement())
+  userId      Int       // 収支項目を登録した人のid
+  amount      Int       // 金額
+  title       String    // 収支項目の名前（おやつ代、お小遣いなど）
+  createdAt   DateTime @default(now()) //作成日時　こう記載すると作成時に自動で付与される。
+}
+
+model ITEMS {
+  id        Int      @id @default(autoincrement())
+  postId    Int       // 収支項目を登録した人のid
+  userId    Int       // 収支項目を登録した人のid
+  title     String
+  amount    Int       // 金額
+  createdAt   DateTime @default(now()) //作成日時　こう記載すると作成時に自動で付与される。
+}
+
+model NOTIFICATIONS {
+  id        Int      @id @default(autoincrement())
+  userId    Int       // 収支項目を登録した人のid
+  title     String
+  description  String
+}

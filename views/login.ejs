@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ログイン</title>
+  <style>
+    :root{
+      --primary:#e84b5a; /* お好みで */
+      --bg:#f6f7fb;
+      --text:#1a1a1a;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',Meiryo,sans-serif}
+    .wrap{min-height:100%;display:grid;place-items:center;padding:24px}
+    .card{width:100%;max-width:460px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+    .logo{width:40px;height:40px;border-radius:12px;background:var(--primary);display:grid;place-items:center;color:#fff;font-weight:800}
+    h1{margin:0 0 4px;font-size:24px}
+    .sub{margin:0 0 18px;color:var(--muted);font-size:13px}
+
+    form{display:grid;gap:18px}
+    .field{display:grid;gap:8px}
+    .label{font-size:12px;color:var(--muted)}
+    .input{display:flex;align-items:center;gap:8px;border:1.5px solid #e5e7eb;border-radius:12px;padding:12px 14px;background:#fff}
+    .input:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px rgba(232,75,90,.12)}
+    .input input{border:0;outline:0;font-size:16px;flex:1;background:transparent}
+    .toggle{border:0;background:#f3f4f6;border-radius:10px;padding:6px 10px;cursor:pointer}
+
+    .row{display:flex;justify-content:space-between;align-items:center}
+    .checkbox{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+
+    .submit{margin-top:6px;height:48px;border:0;border-radius:12px;background:var(--primary);color:#fff;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 8px 18px rgba(232,75,90,.28)}
+    .submit:active{transform:translateY(1px)}
+
+    .note{margin-top:12px;text-align:center;font-size:12px;color:var(--muted)}
+    .error{display:none;margin:-6px 0 6px;color:#b91c1c;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="region" aria-label="ログインフォーム">
+      <div class="brand">
+        <div class="logo">⟡</div>
+        <div>
+          <h1>ログイン</h1>
+          <p class="sub">アカウントにサインインしてください</p>
+        </div>
+      </div>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div style="margin:6px 0 12px; color:#b91c1c; font-size:13px; font-weight:700;"><%= error %></div>
+      <% } %>
+
+      <form id="loginForm" method="post" action="/login" novalidate>
+        <div class="field">
+          <label class="label" for="email">メールアドレス</label>
+          <div class="input">
+            <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="<%= typeof emailPrefill !== 'undefined' ? emailPrefill : '' %>" required />
+          </div>
+          <div class="error" id="errEmail">メールアドレスを入力してください</div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="password">パスワード</label>
+          <div class="input">
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" required />
+            <button type="button" class="toggle" id="togglePw" aria-label="パスワードを表示">表示</button>
+          </div>
+          <div class="error" id="errPw">パスワードを入力してください（6文字以上）</div>
+        </div>
+
+        <div class="row">
+          <label class="checkbox">
+            <input type="checkbox" name="remember" value="1" />
+            ログイン状態を保持
+          </label>
+          <a href="#" style="font-size:12px;color:var(--primary);text-decoration:none;">パスワードをお忘れですか？</a>
+        </div>
+
+        <button class="submit" type="submit">ログイン</button>
+        <p class="note">まだアカウントがありませんか？ 後ほど登録ページを追加します。</p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const f = document.getElementById('loginForm');
+    const email = document.getElementById('email');
+    const pw = document.getElementById('password');
+    const errEmail = document.getElementById('errEmail');
+    const errPw = document.getElementById('errPw');
+    const toggle = document.getElementById('togglePw');
+
+    toggle.addEventListener('click', () => {
+      const isPw = pw.type === 'password';
+      pw.type = isPw ? 'text' : 'password';
+      toggle.textContent = isPw ? '非表示' : '表示';
+    });
+
+    f.addEventListener('submit', (e) => {
+      let ok = true;
+      errEmail.style.display = 'none';
+      errPw.style.display = 'none';
+      if (!email.value.trim()) { errEmail.style.display = 'block'; ok = false; }
+      if (!pw.value.trim() || pw.value.length < 6) { errPw.style.display = 'block'; ok = false; }
+      if (!ok) e.preventDefault();
+    });
+  </script>
+</body>
+</html>

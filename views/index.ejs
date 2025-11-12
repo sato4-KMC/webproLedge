@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>家計簿</title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <link rel="stylesheet" href="/stylesheets/colors.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <section class="pane pane--left">
+        <!-- 固定ヘッダー（赤） ※モバイルは従来通り、PCではstatic表示 -->
+        <header class="hero">
+          <div class="hero__inner">
+            <div class="hero__top">ホーム</div>
+
+            <!-- 好きに差し替え可：ダミーのメトリクス -->
+            <div class="hero__stats">
+              <div class="stat">
+                <div class="stat__label">今月の支出</div>
+                <div class="stat__value"><%= Number(expenseTotal || 0).toLocaleString('ja-JP') %>円</div>
+              </div>
+              <div class="stat">
+                <div class="stat__label">今月の収入</div>
+                <div class="stat__value"><%= Number(incomeTotal || 0).toLocaleString('ja-JP') %>円</div>
+              </div>
+              <div class="stat stat--large">
+                <div class="stat__label">フィルター中</div>
+                <div class="stat__value"><%= Number(totalFiltered || 0).toLocaleString('ja-JP') %>円</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- 左ペイン：投稿フォーム（独立スクロール領域） -->
+        <main class="left-scroll" role="main">
+          <%- include('components/section-open', { title: 'お買い物を登録する' }) %>
+            <form id="postForm" action="/posts" method="post" class="card-form">
+              <div class="field">
+                <div class="field__label">題名</div>
+                <div class="field__input with-underline">
+                  <input id="title" name="title" type="text" placeholder="セブンイレブン" autocomplete="off" />
+                  <span class="ok" aria-hidden="true">✓</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field__label">金額</div>
+                <div class="seg">
+                  <button type="button" id="btnExpense" class="seg__btn seg__btn--active" data-mode="expense">支出</button>
+                  <button type="button" id="btnIncome" class="seg__btn" data-mode="income">収入</button>
+                </div>
+                <div class="field__input with-underline prefixyen">
+                  <span class="yen">¥</span>
+                  <input id="amount" name="amount" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" inputmode="numeric" placeholder="0" />
+                  <span class="ok" aria-hidden="true">✓</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field__label">日付</div>
+                <div class="field__input with-underline">
+                  <input id="createdAt" name="createdAt" type="datetime-local" />
+                  <span class="ok" aria-hidden="true">✓</span>
+                </div>
+              </div>
+
+              <input type="hidden" name="userId" value="1" />
+
+              <div class="toolbar">
+                <button type="button" class="btn cam" title="写真"><span>📷</span></button>
+                <button id="submitBtn" class="btn submit" type="submit">登録する</button>
+              </div>
+            </form>
+          <%- include('components/section-close') %>
+        </main>
+      </section>
+
+      <!-- 右ペイン：フィルター + 履歴（独立スクロール領域） -->
+      <section class="pane pane--right">
+        <main class="right-scroll" role="region" aria-label="履歴">
+      <%- include('components/section-open', { title: 'お取引履歴' }) %>
+      <!-- フィルター -->
+      <form action="/" method="post" class="card-form" style="margin-bottom:14px;">
+        <div class="field">
+          <div class="field__label">種別</div>
+          <div class="field__input with-underline">
+            <select name="qType" style="width:100%;border:0;outline:0;background:transparent;padding:8px 0;font-size:16px;">
+              <option value="" <%= (qType==='')? 'selected' : '' %>>無選択</option>
+              <option value="支出" <%= (qType==='支出')? 'selected' : '' %>>支出</option>
+              <option value="収入" <%= (qType==='収入')? 'selected' : '' %>>収入</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field__label">期間</div>
+          <div class="field__input" style="gap:12px;">
+            <div class="with-underline" style="flex:1;">
+              <input type="date" name="qDateStart" value="<%= qDateStart || '' %>" style="width:100%;border:0;outline:0;background:transparent;padding:8px 0;font-size:16px;"/>
+            </div>
+            <span style="color:#aaa;">〜</span>
+            <div class="with-underline" style="flex:1;">
+              <input type="date" name="qDateEnd" value="<%= qDateEnd || '' %>" style="width:100%;border:0;outline:0;background:transparent;padding:8px 0;font-size:16px;"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn submit" type="submit">フィルター適用</button>
+        </div>
+      </form>
+      <ul class="tx-list">
+        <% if (Array.isArray(result) && result.length) { %>
+          <% result.forEach(function(p){ %>
+            <li class="tx-item" style="cursor:pointer;">
+              <a href="/detail?id=<%= p.id %>" style="text-decoration:none;color:inherit;display:flex;justify-content:space-between;align-items:center;width:100%;">
+                <div class="tx-left">
+                  <div class="tx-icon" aria-hidden="true">🏷️</div>
+                  <div class="tx-text">
+                    <div class="tx-title"><%= p.title || p.name || p.message || 'POST' %></div>
+                    <% 
+                      let dispDate = '';
+                      try {
+                        const dsrc = p.createdAt || p.date;
+                        if (dsrc) {
+                          const d = new Date(dsrc);
+                          const parts = new Intl.DateTimeFormat('ja-JP', {
+                            timeZone: 'Asia/Tokyo',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            weekday: 'short',
+                            hour12: false,
+                          }).formatToParts(d);
+                          const obj = Object.fromEntries(parts.map(p=>[p.type,p.value]));
+                          dispDate = `${obj.year}年${obj.month}月${obj.day}日 ${obj.weekday} ${obj.hour}:${obj.minute}`;
+                        }
+                      } catch(e) {}
+                    %>
+                    <div class="tx-date"><%= dispDate %></div>
+                  </div>
+                </div>
+                <% 
+                  var amountRaw = (p.amount ?? p.price ?? '');
+                  var n = Number(amountRaw);
+                  var cls = isNaN(n) ? '' : (n >= 0 ? 'tx-amount--pos' : 'tx-amount--neg');
+                  var text = (amountRaw === '' ? '' : (isNaN(n) ? ('¥'+amountRaw) : ((n>0?'+ ':'')+'¥'+Math.abs(n))));
+                %>
+                <div class="tx-amount <%= cls %>"><%= text %></div>
+              </a>
+            </li>
+          <% }) %>
+        <% } else { %>
+          <li class="tx-empty">投稿はありません</li>
+        <% } %>
+      </ul>
+    <%- include('components/section-close') %>
+        </main>
+      </section>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        let mode = 'expense'; // expense: 正(+), income: 負(-)
+        const btnExpense = document.getElementById('btnExpense');
+        const btnIncome = document.getElementById('btnIncome');
+        const amountEl  = document.getElementById('amount');
+        const titleEl   = document.getElementById('title');
+        const dateEl    = document.getElementById('createdAt');
+        const formEl    = document.getElementById('postForm');
+
+        if (!formEl) return;
+
+        function pad(n){return String(n).padStart(2,'0');}
+        function nowLocalISO(){
+          const d = new Date();
+          const yyyy = d.getFullYear();
+          const MM = pad(d.getMonth()+1);
+          const dd = pad(d.getDate());
+          const hh = pad(d.getHours());
+          const mm = pad(d.getMinutes());
+          return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+        }
+        if (dateEl) dateEl.value = nowLocalISO();
+
+        function setMode(next){
+          mode = next;
+          btnExpense.classList.toggle('seg__btn--active', mode==='expense');
+          btnIncome.classList.toggle('seg__btn--active', mode==='income');
+        }
+
+        btnExpense && btnExpense.addEventListener('click', ()=> setMode('expense'));
+        btnIncome && btnIncome.addEventListener('click', ()=> setMode('income'));
+
+        // 数字以外の入力を除去（貼り付け含む）
+        amountEl && amountEl.addEventListener('input', function(){
+          const digits = (amountEl.value || '').replace(/[^0-9]/g, '');
+          amountEl.value = digits;
+        });
+
+        formEl.addEventListener('submit', function(){
+          const raw = Number(amountEl.value || 0);
+          const abs = Math.abs(raw);
+          const signed = (mode === 'income') ? -abs : abs;
+          amountEl.value = String(signed);
+          // そのまま送信
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+
+# https://www.notion.so/kmarugoto-college/22-deploy-25209a68050b80e7b46dd21f9898d16c
+これをみてdeploy
+
+gitのURLと、deploy URLと、選択したテーマを選んでgoogle form
+
+=> renderのdeploy urlは30日で切れるから伝える

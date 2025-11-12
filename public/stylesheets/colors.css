@@ -1,0 +1,11 @@
+:root{
+    --primary:#E23354;
+    --secondary:#168438;
+    --black:#1E0403;
+    --white:#FFFEFD;
+    --background:#F9F9F9;
+    --grey:#686868;
+    --caution:#FEC975;
+    --radius: 16px;
+    --shadow:0 2px 2px rgba(0,0,0,.01);
+}
